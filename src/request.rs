@@ -1,8 +1,26 @@
+use std::fmt;
+use crate::methods::Methods;
+
 #[derive(Debug, Clone, PartialEq)]
-pub struct Request {
+pub struct Request<'a> {
+    method: Methods,
     is_secured: bool,
     hostname: String,
-    path: Option<String>
+    path: Option<String>,
+    token: &'a str 
+}
+
+impl fmt::Display for Request<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let path = self.path.clone().unwrap();
+
+        write!(f, "{} {} HTTP/1.1\r\nAuthorization: Bearer {}\r\nHost: {}",
+            self.method,
+            path,
+            self.token,
+            self.hostname
+        )
+    }
 }
 
 fn is_https(url: &str) -> bool {
@@ -60,8 +78,8 @@ fn parse_path(url: &str) -> Option<String> {
 }
 // -->
 
-impl Request {
-    pub fn new(url: &str) -> Self {
+impl <'a> Request<'a> {
+    pub fn new(method: Methods, url: &str, token: &'a str) -> Self {
         let is_secured;
         if is_https(url) {
             is_secured = true;
@@ -78,9 +96,11 @@ impl Request {
         };
 
         Self {
+            method,
             is_secured,
             hostname,
-            path
+            path,
+            token
         }
     }
 }
@@ -93,17 +113,18 @@ mod tests {
     const SECURED_URL_WITH_PATH: &str = "https://xyz.com/api/v1/hello";
     const INSECURED_URL: &str = "http://xyz.com";
     const FTP_URL: &str = "ftp://xyz.com";
+    const TOKEN: &str = "secret";
 
     // <-- [ISSUE 1]
     // The two function below got created because of problem with initializing hostname as string
     // This will be fixed in future, when I will find solution
-    fn init_secured_request() -> Request {
-        let secured_request = Request { is_secured: true, hostname: String::from("xyz.com"), path: None };
+    fn init_secured_request<'a>() -> Request<'a> {
+        let secured_request = Request { method: Methods::GET, is_secured: true, hostname: String::from("xyz.com"), path: None, token: "secret" };
         secured_request
     }
 
-    fn init_insecured_request() -> Request {
-        let insecured_request = Request { is_secured: false, hostname: String::from("xyz.com"), path: None };
+    fn init_insecured_request<'a>() -> Request<'a> {
+        let insecured_request = Request { method: Methods::GET, is_secured: false, hostname: String::from("xyz.com"), path: None, token: "secret" };
         insecured_request
     }
     // -->
@@ -148,19 +169,19 @@ mod tests {
 
     #[test]
     fn test_construct_https_request() {
-        let req = Request::new(SECURED_URL);
+        let req = Request::new(Methods::GET, SECURED_URL, TOKEN);
         assert_eq!(req, init_secured_request())
     }
 
     #[test]
     fn test_construct_http_request() {
-        let req = Request::new(INSECURED_URL);
+        let req = Request::new(Methods::GET, INSECURED_URL, TOKEN);
         assert_eq!(req, init_insecured_request())
     }
 
     #[test]
     #[should_panic]
     fn test_construct_ftp_request() {
-        let _req = Request::new(FTP_URL);
+        let _req = Request::new(Methods::GET, FTP_URL, TOKEN);
     }
 }
