@@ -35,12 +35,20 @@ fn parse_hostname(url: &str) -> String {
 
 impl Request {
     pub fn new(url: &str) -> Self {
+        let is_secured;
         if is_https(url) {
-            Self { is_secured: true }
+            is_secured = true;
         } else if is_http(url) {
-            Self { is_secured: false }
+            is_secured = false;
         } else {
             panic!("Invalid protocol in served url")
+        }
+
+        let hostname = parse_hostname(url);
+
+        Self {
+            is_secured,
+            hostname
         }
     }
 }
