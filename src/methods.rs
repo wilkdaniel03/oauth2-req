@@ -19,6 +19,17 @@ impl fmt::Display for Methods {
     }
 }
 
+impl fmt::Debug for Methods {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Methods::GET => write!(f, "Methods({})", self),
+            Methods::POST => write!(f, "Methods({})", self),
+            Methods::PUT => write!(f, "Methods({})", self),
+            Methods::DELETE => write!(f, "Methods({})", self)
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::Methods;
@@ -45,5 +56,29 @@ mod tests {
     fn test_format_delete() {
         let delete_as_string = format!("{}", Methods::DELETE);
         assert_eq!(String::from("DELETE"), delete_as_string)
+    }
+
+    #[test]
+    fn test_format_debug_get() {
+        let get_as_string = format!("{:?}", Methods::GET);
+        assert_eq!(String::from("Methods(GET)"), get_as_string)
+    }
+
+    #[test]
+    fn test_format_debug_post() {
+        let post_as_string = format!("{:?}", Methods::POST);
+        assert_eq!(String::from("Methods(POST)"), post_as_string)
+    }
+
+    #[test]
+    fn test_format_debug_put() {
+        let put_as_string = format!("{:?}", Methods::PUT);
+        assert_eq!(String::from("Methods(PUT)"), put_as_string)
+    }
+
+    #[test]
+    fn test_format_debug_delete() {
+        let delete_as_string = format!("{:?}", Methods::DELETE);
+        assert_eq!(String::from("Methods(DELETE)"), delete_as_string)
     }
 }
