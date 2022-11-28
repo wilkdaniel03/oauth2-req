@@ -61,8 +61,19 @@ mod tests {
     const INSECURED_URL: &str = "http://xyz.com";
     const FTP_URL: &str = "ftp://xyz.com";
 
-    const SECURED_REQUEST: Request = Request { is_secured: true };
-    const INSECURED_REQUEST: Request = Request { is_secured: false };
+    // <-- [ISSUE 1]
+    // The two function below got created because of problem with initializing hostname as string
+    // This will be fixed in future, when I will find solution
+    fn init_secured_request() -> Request {
+        let secured_request = Request { is_secured: true, hostname: String::from("xyz.com") };
+        secured_request
+    }
+
+    fn init_insecured_request() -> Request {
+        let insecured_request = Request { is_secured: false, hostname: String::from("xyz.com") };
+        insecured_request
+    }
+    // -->
 
     #[test]
     fn test_is_https_returns_true() {
@@ -93,13 +104,13 @@ mod tests {
     #[test]
     fn test_construct_https_request() {
         let req = Request::new(SECURED_URL);
-        assert_eq!(req, SECURED_REQUEST)
+        assert_eq!(req, init_secured_request())
     }
 
     #[test]
     fn test_construct_http_request() {
         let req = Request::new(INSECURED_URL);
-        assert_eq!(req, INSECURED_REQUEST)
+        assert_eq!(req, init_insecured_request())
     }
 
     #[test]
