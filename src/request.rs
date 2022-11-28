@@ -1,7 +1,8 @@
 #[derive(Debug, Clone, PartialEq)]
 pub struct Request {
     is_secured: bool,
-    hostname: String
+    hostname: String,
+    path: Option<String>
 }
 
 fn is_https(url: &str) -> bool {
@@ -12,6 +13,8 @@ fn is_http(url: &str) -> bool {
     url.contains("http://")
 }
 
+// <-- [ISSUE 2] 
+// parse_hostname and parse_path are iterating exactly the same url string twice
 fn parse_hostname(url: &str) -> String {
     let mut slash_counter = 0;
     let mut hostname = String::from("");
@@ -33,6 +36,30 @@ fn parse_hostname(url: &str) -> String {
     hostname
 }
 
+fn parse_path(url: &str) -> Option<String> {
+    let mut slash_counter = 0;
+    let mut path = String::from("");
+    for char in url.chars() {
+        if char == '/' {
+            if slash_counter < 3 {
+                slash_counter += 1;
+                continue;
+            }
+        }
+
+        if slash_counter == 3 {
+            path.push(char);
+        }
+    }
+
+    if path.is_empty() {
+        return None;
+    }
+
+    Some(path)
+}
+// -->
+
 impl Request {
     pub fn new(url: &str) -> Self {
         let is_secured;
@@ -45,10 +72,15 @@ impl Request {
         }
 
         let hostname = parse_hostname(url);
+        let path = match parse_path(url) {
+            Some(p) => Some(format!("/{}", p)),
+            None => panic!("Failed to parse path of {}", url)
+        };
 
         Self {
             is_secured,
-            hostname
+            hostname,
+            path
         }
     }
 }
@@ -58,6 +90,7 @@ mod tests {
     use super::*;
 
     const SECURED_URL: &str = "https://xyz.com";
+    const SECURED_URL_WITH_PATH: &str = "https://xyz.com/api/v1/hello";
     const INSECURED_URL: &str = "http://xyz.com";
     const FTP_URL: &str = "ftp://xyz.com";
 
@@ -65,12 +98,12 @@ mod tests {
     // The two function below got created because of problem with initializing hostname as string
     // This will be fixed in future, when I will find solution
     fn init_secured_request() -> Request {
-        let secured_request = Request { is_secured: true, hostname: String::from("xyz.com") };
+        let secured_request = Request { is_secured: true, hostname: String::from("xyz.com"), path: None };
         secured_request
     }
 
     fn init_insecured_request() -> Request {
-        let insecured_request = Request { is_secured: false, hostname: String::from("xyz.com") };
+        let insecured_request = Request { is_secured: false, hostname: String::from("xyz.com"), path: None };
         insecured_request
     }
     // -->
@@ -99,6 +132,18 @@ mod tests {
     fn test_parse_hostname() {
         let hostname = parse_hostname(SECURED_URL);
         assert_eq!(hostname, String::from("xyz.com"))
+    }
+
+    #[test]
+    fn test_parse_path() {
+        let path = parse_path(SECURED_URL_WITH_PATH);
+        assert_eq!(path, Some(String::from("api/v1/hello")))
+    }
+
+    #[test]
+    fn test_parse_path_without_path() {
+        let path = parse_path(SECURED_URL);
+        assert_eq!(path, None)
     }
 
     #[test]
