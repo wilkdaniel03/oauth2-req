@@ -1,6 +1,7 @@
 #[derive(Debug, Clone, PartialEq)]
 pub struct Request {
-    is_secured: bool
+    is_secured: bool,
+    hostname: String
 }
 
 fn is_https(url: &str) -> bool {
@@ -9,6 +10,27 @@ fn is_https(url: &str) -> bool {
 
 fn is_http(url: &str) -> bool {
     url.contains("http://")
+}
+
+fn parse_hostname(url: &str) -> String {
+    let mut slash_counter = 0;
+    let mut hostname = String::from("");
+    for char in url.chars() {
+        if char == '/' {
+            if slash_counter < 2 {
+                slash_counter += 1;
+                continue;
+            } else {
+                break;
+            }
+        }
+
+        if slash_counter == 2 {
+            hostname.push(char);
+        }
+    }
+
+    hostname
 }
 
 impl Request {
@@ -52,6 +74,12 @@ mod tests {
     #[test]
     fn test_is_http_returns_false() {
         assert_eq!(is_http(&SECURED_URL), false)
+    }
+
+    #[test]
+    fn test_parse_hostname() {
+        let hostname = parse_hostname(SECURED_URL);
+        assert_eq!(hostname, String::from("xyz.com"))
     }
 
     #[test]
