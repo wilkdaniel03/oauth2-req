@@ -92,7 +92,7 @@ impl <'a> Request<'a> {
         let hostname = parse_hostname(url);
         let path = match parse_path(url) {
             Some(p) => Some(format!("/{}", p)),
-            None => panic!("Failed to parse path of {}", url)
+            None => None
         };
 
         Self {
