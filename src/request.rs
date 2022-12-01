@@ -1,4 +1,7 @@
 use std::fmt;
+use std::net::TcpStream;
+use std::io::{Write, Read};
+use std::error::Error;
 use crate::methods::Methods;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -102,6 +105,24 @@ impl <'a> Request<'a> {
             path,
             token
         }
+    }
+
+    pub fn send(&self) -> Result<Vec<u8>, &str> {
+        let addr = match self.is_secured {
+            true => format!("{}:443", self.hostname),
+            false => format!("{}:80", self.hostname)
+        };
+
+        let addr = addr.as_str();
+
+        let mut stream = TcpStream::connect(addr).unwrap();
+        let req = format!("{}", self);
+        stream.write_all(req.as_bytes()).unwrap();
+
+        let mut res = vec![];
+        stream.read_to_end(&mut res).unwrap();
+
+        Ok(res)
     }
 }
 
