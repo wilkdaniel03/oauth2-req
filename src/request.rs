@@ -2,6 +2,7 @@ use std::fmt;
 use std::net::TcpStream;
 use std::io::{Write, Read};
 use std::error::Error;
+use native_tls::TlsConnector;
 use crate::methods::Methods;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -108,21 +109,24 @@ impl <'a> Request<'a> {
     }
 
     pub fn send(&self) -> Result<Vec<u8>, &str> {
-        let addr = match self.is_secured {
-            true => format!("{}:443", self.hostname),
-            false => format!("{}:80", self.hostname)
-        };
-
-        let addr = addr.as_str();
-
-        let mut stream = TcpStream::connect(addr).unwrap();
-        let req = format!("{}", self);
-        stream.write_all(req.as_bytes()).unwrap();
-
         let mut res = vec![];
-        stream.read_to_end(&mut res).unwrap();
+        let _ = self.send_as_insecured(&mut res).unwrap();
 
         Ok(res)
+    }
+
+    fn send_as_insecured(&self, buf: &mut Vec<u8>) -> Result<(), &str> {
+        let addr = format!("{}:80", self.hostname);
+        let addr = addr.as_str();
+
+        let request = format!("{}", self);
+        let request = request.as_bytes();
+        
+        let mut stream = TcpStream::connect(addr).unwrap();
+        stream.write_all(request).unwrap();
+        stream.read_to_end(buf).unwrap();
+
+        Ok(())
     }
 }
 
