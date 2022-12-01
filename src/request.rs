@@ -14,7 +14,7 @@ impl fmt::Display for Request<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let path = self.path.clone().unwrap();
 
-        write!(f, "{} {} HTTP/1.1\r\nAuthorization: Bearer {}\r\nHost: {}",
+        write!(f, "{} {} HTTP/1.1\r\nAuthorization: Bearer {}\r\nHost: {}\r\nConnection: Close\r\n\r\n",
             self.method,
             path,
             self.token,
