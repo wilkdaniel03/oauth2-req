@@ -110,7 +110,10 @@ impl <'a> Request<'a> {
 
     pub fn send(&self) -> Result<Vec<u8>, &str> {
         let mut res = vec![];
-        let _ = self.send_as_insecured(&mut res).unwrap();
+        let _ = match self.is_secured {
+            true => self.send_using_tls_handshake(&mut res),
+            false => self.send_as_insecured(&mut res)
+        };
 
         Ok(res)
     }
@@ -123,6 +126,22 @@ impl <'a> Request<'a> {
         let request = request.as_bytes();
         
         let mut stream = TcpStream::connect(addr).unwrap();
+        stream.write_all(request).unwrap();
+        stream.read_to_end(buf).unwrap();
+
+        Ok(())
+    }
+
+    fn send_using_tls_handshake(&self, buf: &mut Vec<u8>) -> Result<(), &str> {
+        let addr = format!("{}:443", self.hostname);
+        let addr = addr.as_str();
+
+        let request = format!("{}", self);
+        let request = request.as_bytes();
+
+        let connector = TlsConnector::new().unwrap();
+        let stream = TcpStream::connect(addr).unwrap();
+        let mut stream = connector.connect(&self.hostname, stream).unwrap();
         stream.write_all(request).unwrap();
         stream.read_to_end(buf).unwrap();
 
